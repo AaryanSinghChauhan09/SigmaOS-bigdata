@@ -1,0 +1,12 @@
+[package]
+name = "sigmaos-bigdata"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "SigmaOS component: bigdata"
+
+[dependencies]
+
+[[bin]]
+name = "sigmaos-bigdata"
+path = "src/main.rs"

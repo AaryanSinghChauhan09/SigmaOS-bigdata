@@ -142,7 +142,7 @@ pub struct Job {
     pub strategy: PartitionStrategy,
     #[serde(default = "default_key_field")]
     pub key_field: Option<String>,
-    #[serde(default)]
+    #[serde(default = "default_job_status")]
     pub status: JobStatus,
     #[serde(default)]
     pub records_processed: usize,
@@ -154,6 +154,10 @@ pub struct Job {
 
 fn default_key_field() -> Option<String> {
     None
+}
+
+fn default_job_status() -> JobStatus {
+    JobStatus::Pending
 }
 
 /// Job store.

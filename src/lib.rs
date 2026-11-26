@@ -62,8 +62,9 @@ pub fn partition(
             }
         }
         PartitionStrategy::Range => {
-            let field = key_field
-                .ok_or_else(|| BigDataError::Validation("range partition needs key field".into()))?;
+            let field = key_field.ok_or_else(|| {
+                BigDataError::Validation("range partition needs key field".into())
+            })?;
             // compute min/max
             let mut nums: Vec<f64> = records
                 .iter()
@@ -75,7 +76,11 @@ pub fn partition(
             }
             let min = nums.first().copied().unwrap();
             let max = nums.last().copied().unwrap();
-            let width = if max > min { (max - min) / n as f64 } else { 1.0 };
+            let width = if max > min {
+                (max - min) / n as f64
+            } else {
+                1.0
+            };
             for r in records {
                 let v = r.get(field).and_then(|x| x.as_f64()).unwrap_or(min);
                 let idx = (((v - min) / width) as usize).min(n - 1);
@@ -117,7 +122,9 @@ pub fn stats(records: &[Value]) -> DatasetStats {
     DatasetStats {
         records: records.len(),
         fields: fields.into_iter().collect(),
-        size_bytes: serde_json::to_string(records).map(|s| s.len() as u64).unwrap_or(0),
+        size_bytes: serde_json::to_string(records)
+            .map(|s| s.len() as u64)
+            .unwrap_or(0),
     }
 }
 

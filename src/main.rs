@@ -1,7 +1,9 @@
 //! CLI for sigmaos-bigdata.
 
 use clap::{Parser, Subcommand, ValueEnum};
-use sigmaos_bigdata::{default_store_path, partition, stats, BigDataError, JobStore, PartitionStrategy};
+use sigmaos_bigdata::{
+    default_store_path, partition, stats, BigDataError, JobStore, PartitionStrategy,
+};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -102,7 +104,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("fields: {}", s.fields.join(", "));
             println!("size: {} bytes", s.size_bytes);
         }
-        Commands::Partition { file, n, strategy, key } => {
+        Commands::Partition {
+            file,
+            n,
+            strategy,
+            key,
+        } => {
             let text = std::fs::read_to_string(&file)?;
             let v: serde_json::Value = serde_json::from_str(&text)?;
             let records = match v {
@@ -114,7 +121,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("partition {i}: {} records", b.len());
             }
         }
-        Commands::Create { name, input, output, partitions, strategy, key } => {
+        Commands::Create {
+            name,
+            input,
+            output,
+            partitions,
+            strategy,
+            key,
+        } => {
             let job = store.create(&name, input, output, partitions, strategy.into(), key)?;
             store.save(&store_path(&cli.store)?)?;
             println!("created job {} ({})", job.id, job.name);
@@ -123,12 +137,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             store.run(&id)?;
             store.save(&store_path(&cli.store)?)?;
             let j = store.get(&id).unwrap();
-            println!("job {} -> {:?} ({} records)", id, j.status, j.records_processed);
+            println!(
+                "job {} -> {:?} ({} records)",
+                id, j.status, j.records_processed
+            );
         }
         Commands::List => {
             for j in store.list() {
-                println!("{} [{:?}] {} -> {} ({} partitions, {:?})",
-                    j.id, j.status, j.name, j.output_path.display(), j.partitions, j.strategy);
+                println!(
+                    "{} [{:?}] {} -> {} ({} partitions, {:?})",
+                    j.id,
+                    j.status,
+                    j.name,
+                    j.output_path.display(),
+                    j.partitions,
+                    j.strategy
+                );
             }
         }
         Commands::Path => println!("{}", store_path(&cli.store)?.display()),

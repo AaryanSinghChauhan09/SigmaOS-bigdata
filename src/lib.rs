@@ -348,7 +348,14 @@ mod tests {
         let missing = PathBuf::from("/nonexistent/sigmaos-bigdata-input.json");
 
         // Act
-        let err = store.create("j1", missing, PathBuf::from("/tmp/out"), 2, PartitionStrategy::RoundRobin, None);
+        let err = store.create(
+            "j1",
+            missing,
+            PathBuf::from("/tmp/out"),
+            2,
+            PartitionStrategy::RoundRobin,
+            None,
+        );
 
         // Assert
         assert!(matches!(err, Err(BigDataError::Validation(_))));

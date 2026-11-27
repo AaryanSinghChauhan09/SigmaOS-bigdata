@@ -287,3 +287,71 @@ pub fn default_store_path() -> Option<PathBuf> {
     directories::ProjectDirs::from("org", "sigmaos", "sigmaos")
         .map(|p| p.data_dir().join("bigdata").join("jobs.json"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_partition_round_robin_and_zero_validation_aaa() {
+        // Arrange
+        let records = vec![json!({"id": 1}), json!({"id": 2}), json!({"id": 3})];
+
+        // Act
+        let buckets = partition(&records, 2, PartitionStrategy::RoundRobin, None).unwrap();
+        let zero_err = partition(&records, 0, PartitionStrategy::RoundRobin, None);
+
+        // Assert
+        assert_eq!(buckets.len(), 2);
+        assert_eq!(buckets[0].len(), 2);
+        assert_eq!(buckets[1].len(), 1);
+        assert!(matches!(zero_err, Err(BigDataError::Validation(_))));
+    }
+
+    #[test]
+    fn test_partition_hash_and_range_require_key_field_aaa() {
+        // Arrange
+        let records = vec![json!({"k": "a", "v": 10.0}), json!({"k": "b", "v": 20.0})];
+
+        // Act
+        let hash_err = partition(&records, 2, PartitionStrategy::Hash, None);
+        let range_buckets = partition(&records, 2, PartitionStrategy::Range, Some("v")).unwrap();
+
+        // Assert
+        assert!(matches!(hash_err, Err(BigDataError::Validation(_))));
+        assert_eq!(range_buckets[0].len(), 1);
+        assert_eq!(range_buckets[1].len(), 1);
+    }
+
+    #[test]
+    fn test_stats_collects_fields_and_counts_aaa() {
+        // Arrange
+        let records = vec![
+            json!({"name": "alpha", "score": 1}),
+            json!({"name": "beta", "active": true}),
+        ];
+
+        // Act
+        let s = stats(&records);
+
+        // Assert
+        assert_eq!(s.records, 2);
+        assert_eq!(s.fields, vec!["active", "name", "score"]);
+        assert!(s.size_bytes > 0);
+    }
+
+    #[test]
+    fn test_job_store_create_rejects_missing_input_and_zero_partitions_aaa() {
+        // Arrange
+        let mut store = JobStore::default();
+        let missing = PathBuf::from("/nonexistent/sigmaos-bigdata-input.json");
+
+        // Act
+        let err = store.create("j1", missing, PathBuf::from("/tmp/out"), 2, PartitionStrategy::RoundRobin, None);
+
+        // Assert
+        assert!(matches!(err, Err(BigDataError::Validation(_))));
+        assert!(store.list().is_empty());
+    }
+}
